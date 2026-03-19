@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user profile information and financial data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique user ID (UID from Firebase Auth)." },
+        "name": { "type": "string", "description": "The user's full name." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "phoneNumber": { "type": "string", "description": "The user's phone number." },
+        "bio": { "type": "string", "description": "A short biography of the user." },
+        "avatarUrl": { "type": "string", "description": "URL to the user's avatar image." },
+        "avatarScale": { "type": "number", "description": "Scale factor for the avatar display." },
+        "avatarOffset": { "type": "number", "description": "Offset factor for the avatar display." },
+        "pin": { "type": "string", "description": "User's security PIN." },
+        "walletId": { "type": "string", "description": "Unique wallet identifier." },
+        "balance": { "type": "number", "description": "Current wallet balance." },
+        "holdings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "assetId": { "type": "string" },
+              "fractionsOwned": { "type": "number" },
+              "averagePrice": { "type": "number" }
+            }
+          }
+        },
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string", "enum": ["BUY", "SELL", "SWAP", "DEPOSIT", "WITHDRAW"] },
+              "assetId": { "type": "string" },
+              "amount": { "type": "number" },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "status": { "type": "string", "enum": ["COMPLETED", "PENDING", "FAILED"] }
+            }
+          }
+        }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "ArtAsset": {
+      "title": "Art Asset",
+      "description": "Information about an art piece available for investment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "year": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "fractionPrice": { "type": "number" },
+        "totalFractions": { "type": "number" },
+        "availableFractions": { "type": "number" },
+        "insuranceCompany": { "type": "string" },
+        "policyNumber": { "type": "string" },
+        "insuranceExpiry": { "type": "string" },
+        "isCatalogOnly": { "type": "boolean" },
+        "gallery": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "imageUrl": { "type": "string" },
+              "year": { "type": "string" },
+              "fractionPrice": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["id", "title", "artist", "fractionPrice"]
+    },
+    "File": {
+      "title": "File",
+      "description": "Metadata for files uploaded by the user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique file ID." },
+        "uid": { "type": "string", "description": "The UID of the owner." },
+        "name": { "type": "string", "description": "The file name." },
+        "url": { "type": "string", "description": "The download URL of the file." },
+        "type": { "type": "string", "description": "The MIME type of the file." },
+        "size": { "type": "number", "description": "The size of the file in bytes." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the file was uploaded." }
+      },
+      "required": ["id", "uid", "name", "url"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles, indexed by their Firebase UID."
+    },
+    "/users/{userId}/files/{fileId}": {
+      "schema": "File",
+      "description": "Collection of files belonging to a specific user."
+    },
+    "/assets/{assetId}": {
+      "schema": "ArtAsset",
+      "description": "Global collection of art assets available for investment."
+    }
+  }
+}

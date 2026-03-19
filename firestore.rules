@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase UID
+    // Fields:
+    //   - id: string (required) - UID
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - phoneNumber: string
+    //   - role: string (admin/user)
+    //   - balance: number
+    //   - holdings: list of objects
+    //   - transactions: list of objects
+    //
+    // Collection: assets
+    // Document ID: Asset ID
+    // Fields:
+    //   - id: string
+    //   - title: string
+    //   - artist: string
+    //   - fractionPrice: number
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "arquivooasis@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name', 'email']) &&
+             data.id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidAsset(data) {
+      return data.keys().hasAll(['id', 'title', 'artist', 'fractionPrice']) &&
+             data.id is string &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.artist is string && data.artist.size() > 0 && data.artist.size() < 100 &&
+             data.fractionPrice is number && data.fractionPrice >= 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                      (isOwner(userId) && request.resource.data.role != 'admin' || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                      (isOwner(userId) && request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
+
+      match /files/{fileId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /assets/{assetId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidAsset(request.resource.data);
+    }
+
+    // Test connection path
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
